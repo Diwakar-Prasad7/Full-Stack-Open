@@ -40,11 +40,20 @@ const App = () => {
     if(existingPerson){
       alert(`${existingPerson.name} is already added to phonebook, replace the older number to new one`)
       let newPerson = {...existingPerson, number: newNum}
-      service.update(existingPerson.id, newPerson).then(returnedPerson => setPerson(person.map(obj => obj.id === existingPerson.id ? returnedPerson : obj)))
+      service.update(existingPerson.id, newPerson)
+      .then(returnedPerson => {
+      setPerson(person.map(obj => obj.id === existingPerson.id ? returnedPerson : obj))
       setErrorMsg(`${newPerson.name}'s number is changed`)
       setTimeout(()=> setErrorMsg(null), 5000)
       setNewName('')
       setNewNum('')
+      })
+      .catch(error => {
+      setErrorMsg(error.response?.data?.error || 'Error updating number');
+      setTimeout(() => setErrorMsg(null), 5000);
+      }
+    );
+
     } else {
 
     let newPerson = {
@@ -62,26 +71,39 @@ const App = () => {
     // // setNewName("");
     // // setNewNum("");
 
-    service.create(newPerson).then(returnedData => setPerson(person.concat(returnedData)))
+    service.create(newPerson)
+    .then(returnedData => {
+    setPerson(person.concat(returnedData))
     setErrorMsg(`Added ${newPerson.name} `)
     setTimeout(()=> setErrorMsg(null), 5000)
     setNewName('')
     setNewNum('')
+    })
+    .catch(error => {
+      console.log(error)
+      setErrorMsg(error.response?.data?.error)
+      setTimeout(() => setErrorMsg(null), 5000)
+    })
 }
   };
 
-  const handleDelete = (personToDelete) => {
-    alert(`Delete ${personToDelete.name} ?`)
-    service
-      .dlt(personToDelete.id)
-      .then(() => {
-        setPerson(person.filter(p => p.id !== personToDelete.id));
-      })
-      .catch(error => {
-        setErrorMsg(`Information of ${personToDelete.name} has already been removed from server`)
-        setTimeout(() => setErrorMsg(null), 5000)
-      });
-  }
+const handleDelete = (personToDelete) => {
+  if (!window.confirm(`Delete ${personToDelete.name}?`)) return;
+
+  service
+    .dlt(personToDelete.id)
+    .then(() => {
+      setPerson(person.filter(p => p.id !== personToDelete.id));
+    })
+    .catch(() => {
+      setErrorMsg(`Information of ${personToDelete.name} has already been removed from server`);
+      setTimeout(() => setErrorMsg(null), 5000);
+
+      setPerson(person.filter(p => p.id !== personToDelete.id));
+    });
+};
+
+
 
   const handleNameChange = (event) => {
     setNewName(event.target.value);
